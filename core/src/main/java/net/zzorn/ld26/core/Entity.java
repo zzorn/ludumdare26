@@ -1,146 +1,141 @@
 package net.zzorn.ld26.core;
 
-import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.Array;
 
-import static java.lang.Math.*;
-import static net.zzorn.ld26.core.MathUtils.*;
+import static net.zzorn.ld26.core.utils.MathUtils.*;
 
 /**
  *
  */
-public class Entity extends Sprite {
+public class Entity {
 
-    private static final double Tau = PI * 2;
+    private Array<Aspect> aspects = new Array<Aspect>();
 
-    private double direction;
-    private double directionDelta;
-    private double forwardDelta;
-    private double rightDelta;
-    private double dx;
-    private double dy;
-    private double x;
-    private double y;
+    private static final Vector3 temp1 = new Vector3();
+    private static final Vector3 temp2 = new Vector3();
+    private static final float SQRT_2 = (float) Math.sqrt(2);
 
-    private double inertia = 0.98;
+    private final String textureName;
+    private World world;
 
-    private double turnSpeed = 1;
-    private double forwardSpeed = 200;
-    private double strafeSpeed = 200;
+    private Vector3 pos = new Vector3();
+    private Vector3 vel = new Vector3();
+    private Vector3 acc = new Vector3();
+    private Vector3 screenPos = new Vector3();
 
-    public Entity(double x, double y, double w, double h, TextureRegion textureRegion) {
-        super(textureRegion);
+    private float maxVel = 200;
+    private float maxThrust = 10000;
+    private float size = 100;
+    private float mass = 100;
 
-        this.x = x;
-        this.y = y;
-        setPosition((float) x, (float) y);
-        setSize((float) w, (float) h);
+    private float screenSize;
+
+    private TextureRegion textureRegion;
+
+    private float turnSpeed = 1;
+    private float forwardSpeed = 200;
+    private float strafeSpeed = 200;
+
+    public Entity(float x, float y, float z, float size, String textureName) {
+        this.textureName = textureName;
+
+        pos.set(x, y, z);
+        this.size = size;
     }
 
-    public double getTurnSpeed() {
-        return turnSpeed;
+    public Entity addAspect(Aspect aspect) {
+        aspects.add(aspect);
+        return this;
     }
 
-    public void setTurnSpeed(double turnSpeed) {
-        this.turnSpeed = turnSpeed;
+    public World getWorld() {
+        return world;
     }
 
-    public double getForwardSpeed() {
-        return forwardSpeed;
-    }
-
-    public void setForwardSpeed(double forwardSpeed) {
-        this.forwardSpeed = forwardSpeed;
-    }
-
-    public double getStrafeSpeed() {
-        return strafeSpeed;
-    }
-
-    public void setStrafeSpeed(double strafeSpeed) {
-        this.strafeSpeed = strafeSpeed;
+    public void setWorld(World world) {
+        this.world = world;
+        textureRegion = world.getTextureAtlas().findRegion(textureName);
     }
 
     public void update(float deltaTime) {
 
-        direction += directionDelta * turnSpeed * deltaTime;
+        // Update aspects
+        for (Aspect aspect : aspects) {
+            aspect.update(this, deltaTime);
+        }
 
-        double oldDx = dx;
-        double oldDy = dy;
+        // Scale control acceleration with thrust produced
+        acc.scl(maxThrust);
+        acc.clamp(0, maxThrust);
 
-        dx = cos(direction * Tau) * forwardDelta * forwardSpeed * deltaTime;
-        dy = sin(direction * Tau) * forwardDelta * forwardSpeed * deltaTime;
-        dx += cos((direction - 0.25) * Tau) * rightDelta * strafeSpeed * deltaTime;
-        dy += sin((direction - 0.25) * Tau) * rightDelta * strafeSpeed * deltaTime;
+        // Apply air resistance to acceleration.
+        final float airResistance = world.getAirResistance(pos);
+        float speed = vel.len();
+        float dragForce = airResistance * speed;
+        acc.add(-vel.x * dragForce);
+        acc.add(-vel.y * dragForce);
+        acc.add(-vel.z * dragForce);
 
-        dx = mix(inertia, dx, oldDx);
-        dy = mix(inertia, dy, oldDy);
+        // Apply acceleration
+        mulAdd(vel, acc, deltaTime / mass);
 
-        x += dx;
-        y += dy;
+        // Clamp to terminal velocity
+        vel.clamp(0, maxVel);
 
-        setPosition((float) x, (float) y);
-    }
+        // Apply velocity
+        mulAdd(pos, vel, deltaTime);
 
-    public double getDx() {
-        return dx;
-    }
-
-    public double getDy() {
-        return dy;
+        // Zero acceleration (it is set again from user input or AI movement)
+        acc.set(0,0,0);
     }
 
     public void render(SpriteBatch spriteBatch, TextureAtlas atlas) {
-        draw(spriteBatch);
+        spriteBatch.draw(textureRegion, screenPos.x - screenSize / 2, screenPos.y - screenSize / 2, screenSize, screenSize);
+
+        // Render aspects
+        for (Aspect aspect : aspects) {
+            aspect.render(this, screenPos, screenSize, spriteBatch, atlas);
+        }
+
     }
 
-    public double getDirection() {
-        return direction;
+    public void project(PerspectiveCamera camera) {
+        screenPos.set(pos);
+        temp2.set(pos);
+        temp2.add(size, size, 0);
+        camera.project(screenPos);
+        camera.project(temp2);
+
+        screenSize = temp2.dst(screenPos) / SQRT_2;
     }
 
-    public void setDirection(double direction) {
-        this.direction = direction;
+
+    public Vector3 getAcc() {
+        return acc;
     }
 
-    public double getDirectionDelta() {
-        return directionDelta;
+    public Vector3 getVel() {
+        return vel;
     }
 
-    public void setDirectionDelta(double directionDelta) {
-        this.directionDelta = directionDelta;
+    public Vector3 getPos() {
+        return pos;
     }
 
-    public double getForwardDelta() {
-        return forwardDelta;
+    public float getMaxThrust() {
+        return maxThrust;
     }
 
-    public void setForwardDelta(double forwardDelta) {
-        this.forwardDelta = forwardDelta;
+    public void setMaxThrust(float maxThrust) {
+        this.maxThrust = maxThrust;
     }
 
-    public double getRightDelta() {
-        return rightDelta;
-    }
-
-    public void setRightDelta(double rightDelta) {
-        this.rightDelta = rightDelta;
-    }
-
-    public double getXPos() {
-        return x;
-    }
-
-    public void setX(double x) {
-        this.x = x;
-    }
-
-    public double getYPos() {
-        return y;
-    }
-
-    public void setY(double y) {
-        this.y = y;
+    public Vector3 getScreenPos() {
+        return screenPos;
     }
 }

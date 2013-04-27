@@ -18,8 +18,8 @@ public class Player extends Entity {
     private int leftKey = Input.Keys.A;
 
 
-    public Player(double x, double y, double w, double h, TextureRegion textureRegion) {
-        super(x, y, w, h, textureRegion);
+    public Player(float x, float y, float z, float size, String textureName) {
+        super(x, y, z, size, textureName);
 
         this.inputProcessor = new InputAdapter() {
             @Override
@@ -39,12 +39,12 @@ public class Player extends Entity {
         double fd = 0;
         if (Gdx.input.isKeyPressed(upKey)) fd += 1;
         if (Gdx.input.isKeyPressed(downKey)) fd -= 1;
-        setForwardDelta(fd);
+        //setForwardDelta(fd);
 
         double dd = 0;
         if (Gdx.input.isKeyPressed(leftKey)) dd -= 1;
         if (Gdx.input.isKeyPressed(rightKey)) dd += 1;
-        setDirectionDelta(dd);
+        //setDirectionDelta(dd);
 
         super.update(deltaTime);
     }

@@ -1,23 +1,37 @@
 package net.zzorn.ld26.core;
 
 import com.badlogic.gdx.*;
+import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL10;
+import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 
 public class MainGame extends Game {
     private SpriteBatch spriteBatch;
     private TextureAtlas atlas;
-    private Player player;
+    private World world;
     private InputProcessor inputProcessor;
+    private PerspectiveCamera camera;
+    private OrthographicCamera screenCamera;
+    private Player player;
 
     @Override
 	public void create () {
         atlas = new TextureAtlas(Gdx.files.internal("ld26.pack"));
         spriteBatch = new SpriteBatch();
-        player = new Player(100, 100, 10, 10, atlas.findRegion("greenball"));
-        player.setPosition(100, 100);
-        player.setSize(50, 50);
+        camera = new PerspectiveCamera(67, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+
+        screenCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        screenCamera.position.set(Gdx.graphics.getWidth()/2, Gdx.graphics.getHeight()/2, 0);
+
+        world = new World(atlas);
+
+        world.setup(42);
+        player = new Player(100, 100, 100, 10, "greenball");
+        world.addEntity(player);
+
 
         // Setup input
         inputProcessor = createInputProcessor();
@@ -26,7 +40,13 @@ public class MainGame extends Game {
 
     @Override
 	public void resize (int width, int height) {
-	}
+        screenCamera.viewportWidth = Gdx.graphics.getWidth();
+        screenCamera.viewportHeight = Gdx.graphics.getHeight();
+        screenCamera.position.set(Gdx.graphics.getWidth()/2, Gdx.graphics.getHeight()/2, 0);
+        screenCamera.update();
+
+        spriteBatch.getProjectionMatrix().setToOrtho2D(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+    }
 
 	@Override
 	public void render () {
@@ -37,14 +57,19 @@ public class MainGame extends Game {
 		Gdx.gl.glClearColor(0, 0, 0, 0);
 		Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT);
 
+        // Setup projection
+        screenCamera.update();
+        camera.update();
+        //spriteBatch.setProjectionMatrix(screenCamera.combined);
+
         // Render
         spriteBatch.begin();
-        player.render(spriteBatch, atlas);
+        world.render(camera, spriteBatch, atlas);
         spriteBatch.end();
 	}
 
     private void update(float deltaTime) {
-        player.update(deltaTime);
+        world.update(deltaTime);
     }
 
     @Override
