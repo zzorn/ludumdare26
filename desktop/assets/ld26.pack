@@ -10,16 +10,44 @@ redbox
   orig: 16, 16
   offset: 0, 0
   index: -1
-yellowstar
+cloud3
   rotate: false
   xy: 16, 0
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
-greenball
+cloud4
   rotate: false
   xy: 32, 0
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: -1
+cloud2
+  rotate: false
+  xy: 48, 0
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: -1
+yellowstar
+  rotate: false
+  xy: 64, 0
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: -1
+cloud1
+  rotate: false
+  xy: 80, 0
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: -1
+greenball
+  rotate: false
+  xy: 96, 0
   size: 16, 16
   orig: 16, 16
   offset: 0, 0

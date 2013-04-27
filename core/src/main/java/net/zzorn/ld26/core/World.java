@@ -84,21 +84,16 @@ public class World {
 
         random = new Random(seed);
 
-        for (int i = 0; i < 1000; i++) {
-            float x = (float) random.nextGaussian() * 1000;
-            float y = (float) random.nextGaussian() * 1000;
-            float z = (float) random.nextGaussian() * 1000;
-            float size = Math.abs((float) random.nextGaussian() * 10) + 100;
-            final Entity cloud = addEntity(new Entity(x, y, z, size, "redbox"))
-                    .addAspect(
-                            new RandomMover(
-                                    randomVector(random, 1, 1, 1, temp),
-                                    randomVector(random, 50, 50, 50, temp)))
-                    .addAspect(
-                            new TargetMover(x, y, z, 0.001f)
-                    );
-            cloud.setMaxThrust(100);
+        createCloudLayer(0,350, 0, 1000);
+        createCloudLayer(0,150, 0, 100);
+        createCloudLayer(0,-150, 0, 100);
+        createCloudLayer(0,-350, 0, 1000);
 
+        for (int i = 0; i < 5; i++) {
+            float x = (float) random.nextGaussian() * 500;
+            float y = (float) random.nextGaussian() * 500;
+            float z = (float) random.nextGaussian() * 1000;
+            //createCloudLayer(x, y, z);
         }
 
         for (int i = 0; i < 10; i++) {
@@ -108,6 +103,28 @@ public class World {
 
             float num = Math.abs((float) random.nextGaussian() * 10);
             createSwarm(x, y, z, 1000, num);
+        }
+    }
+
+    private void createCloudLayer(final float baseX, final float baseY, final float baseZ, int num) {
+        for (int i = 0; i < num; i++) {
+            float x = baseX + (float) random.nextGaussian() * 1000;
+            float y = baseY + (float) random.nextGaussian() * 50;
+            float z = baseZ + (float) random.nextGaussian() * 1000f;
+            float size = Math.abs((float) random.nextGaussian() * 10) + 100;
+
+            String cloudName = "cloud" + (random.nextInt(4) + 1);
+
+            final Entity cloud = addEntity(new Entity(x, y, z, size, cloudName))
+                    .addAspect(
+                            new RandomMover(
+                                    randomVector(random, 2, 2, 2, temp),
+                                    randomVector(random, 50, 50, 50, temp)))
+                    .addAspect(
+                            new TargetMover(x, y, z, 0.5f)
+                    );
+            cloud.setMaxThrust(500);
+
         }
     }
 
