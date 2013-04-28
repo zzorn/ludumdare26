@@ -12,6 +12,5 @@ public interface Aspect {
 
     public void update(Entity entity, float deltaTime);
 
-    public void render(Entity entity, Vector3 screenPos, float size, SpriteBatch spriteBatch, TextureAtlas atlas);
 
 }

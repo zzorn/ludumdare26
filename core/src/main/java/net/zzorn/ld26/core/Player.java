@@ -4,10 +4,12 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.InputProcessor;
+import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.math.Quaternion;
 import com.badlogic.gdx.math.Vector3;
 
@@ -53,13 +55,15 @@ public class Player extends Entity {
                 return false;
             }
         };
+
+        camera.position.set(getPos());
     }
 
     @Override
     public void update(float deltaTime) {
         camera.position.set(getPos());
         camera.direction.set(getDirection()).nor();
-        camera.update();
+        //camera.update();
 
         final Vector3 direction = getDirection();
 
@@ -107,12 +111,12 @@ public class Player extends Entity {
         super.update(deltaTime);
     }
 
-    @Override
-    public void render(SpriteBatch spriteBatch, TextureAtlas atlas) {
-        // No need to render, 1st person perspective
-    }
-
     public InputProcessor getInputProcessor() {
         return inputProcessor;
+    }
+
+    @Override
+    public void render(Camera camera, DecalBatch decalBatch, TextureAtlas atlas) {
+
     }
 }

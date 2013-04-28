@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 import net.zzorn.ld26.core.movers.AttachMover;
@@ -36,8 +37,11 @@ public class World {
     private final Vector3 temp = new Vector3();
     private final Vector3 temp2 = new Vector3();
 
-    public World(TextureAtlas textureAtlas) {
+    private final Player player;
+
+    public World(TextureAtlas textureAtlas, Player player) {
         this.textureAtlas = textureAtlas;
+        this.player = player;
     }
 
     public Entity addEntity(Entity entity) {
@@ -96,29 +100,11 @@ public class World {
         }
     }
 
-    public void render(PerspectiveCamera camera, SpriteBatch spriteBatch, TextureAtlas atlas) {
-
-        // Project
-        for (Entity entity : entities) {
-            entity.project(camera);
-        }
-
-        // Sort by depth
-        entities.sort(new Comparator<Entity>() {
-            @Override
-            public int compare(Entity o1, Entity o2) {
-                final float z1 = o1.getScreenDistance();
-                final float z2 = o2.getScreenDistance();
-
-                if (z1 > z2) return -1;
-                else if (z1 < z2) return 1;
-                else return 0;
-            }
-        });
+    public void render(PerspectiveCamera camera, DecalBatch decalBatch, TextureAtlas atlas) {
 
         // Render
         for (Entity entity : entities) {
-            entity.render(spriteBatch, atlas);
+            entity.render(camera, decalBatch, atlas);
         }
     }
 
@@ -245,5 +231,9 @@ public class World {
                     break;
             }
         }
+    }
+
+    public Player getPlayer() {
+        return player;
     }
 }

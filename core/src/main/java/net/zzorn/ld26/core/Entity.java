@@ -1,10 +1,13 @@
 package net.zzorn.ld26.core;
 
+import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g3d.decals.Decal;
+import com.badlogic.gdx.graphics.g3d.decals.DecalBatch;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
 
@@ -15,15 +18,20 @@ import static net.zzorn.ld26.core.utils.MathUtils.*;
  */
 public class Entity {
 
+
+
     private Array<Aspect> aspects = new Array<Aspect>();
 
     private Weapon weapon;
+
+    private Decal decal;
 
     private CollisionGroup collisionGroup = null;
 
     private static final Vector3 temp1 = new Vector3();
     private static final Vector3 temp2 = new Vector3();
     private static final float SQRT_2 = (float) Math.sqrt(2);
+    private static final Vector3 UP = new Vector3(0, 1, 0);
 
     private final String textureName;
     private World world;
@@ -33,7 +41,6 @@ public class Entity {
     private Vector3 acc = new Vector3();
     private Vector3 direction = new Vector3(0, 0, 1);
     private Vector3 screenPos = new Vector3();
-    private float screenDistance = 0;
 
     private Color color = new Color(1, 1, 1, 1);
     private float luminosity = 1;
@@ -76,6 +83,7 @@ public class Entity {
     public void setWorld(World world) {
         this.world = world;
         textureRegion = world.getTextureAtlas().findRegion(textureName);
+        decal = Decal.newDecal(textureRegion, true);
     }
 
     public void update(float deltaTime) {
@@ -120,36 +128,28 @@ public class Entity {
         }
     }
 
-    public void render(SpriteBatch spriteBatch, TextureAtlas atlas) {
-        if (screenDistance > 1) {
-            float f = map(screenDistance, 0, 5000, 1, 0);
-            f = f * f;
-            f = clamp0to1(f);
-            spriteBatch.setColor(clamp0to1(color.r * f * luminosity),
-                                 clamp0to1(color.g * f * luminosity),
-                                 clamp0to1(color.b * f * luminosity),
-                                 1);
+    public void render(Camera camera, DecalBatch decalBatch, TextureAtlas atlas) {
+        final Vector3 playerPos = getWorld().getPlayer().getPos();
 
-            spriteBatch.draw(textureRegion, screenPos.x - screenSize / 2, screenPos.y - screenSize / 2, screenSize, screenSize);
+        // Update decal
+        float playerDistance = playerPos.dst(pos);
+        float f = map(playerDistance, 0, 4000, 1, 0);
+        f = f * f;
+        f = clamp0to1(f);
+        decal.setColor(clamp0to1(color.r * f * luminosity),
+                       clamp0to1(color.g * f * luminosity),
+                       clamp0to1(color.b * f * luminosity),
+                       1);
+        decal.setDimensions(10+size, 10+size);
+        decal.setPosition(pos.x, pos.y, pos.z);
 
-            // Render aspects
-            for (Aspect aspect : aspects) {
-                aspect.render(this, screenPos, screenSize, spriteBatch, atlas);
-            }
-        }
+
+        // Face camera
+        temp1.set(pos).sub(camera.direction);
+        decal.lookAt(temp1, camera.up);
+
+        decalBatch.add(decal);
     }
-
-    public void project(PerspectiveCamera camera) {
-        screenPos.set(pos);
-        temp2.set(pos);
-        temp2.add(size, size, 0);
-        camera.project(screenPos);
-        camera.project(temp2);
-
-        screenSize = temp2.dst(screenPos) / SQRT_2;
-        screenDistance = pos.dst(camera.position);
-    }
-
 
     public Vector3 getAcc() {
         return acc;
@@ -173,10 +173,6 @@ public class Entity {
 
     public Vector3 getScreenPos() {
         return screenPos;
-    }
-
-    public float getScreenDistance() {
-        return screenDistance;
     }
 
     public Color getColor() {
