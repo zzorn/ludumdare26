@@ -1,5 +1,6 @@
 package net.zzorn.ld26.core;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
@@ -19,6 +20,7 @@ import static net.zzorn.ld26.core.utils.MathUtils.*;
  */
 public class World {
 
+    private static final float WORM_LUMINOSITY = 2f;
     private final TextureAtlas textureAtlas;
 
     private Array<Entity> entities = new Array<Entity>(1000);
@@ -65,8 +67,8 @@ public class World {
         entities.sort(new Comparator<Entity>() {
             @Override
             public int compare(Entity o1, Entity o2) {
-                final float z1 = o1.getScreenPos().z;
-                final float z2 = o2.getScreenPos().z;
+                final float z1 = o1.getScreenDistance();
+                final float z2 = o2.getScreenDistance();
 
                 if (z1 > z2) return -1;
                 else if (z1 < z2) return 1;
@@ -96,12 +98,12 @@ public class World {
             //createCloudLayer(x, y, z);
         }
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 20; i++) {
             float x = (float) random.nextGaussian() * 1000;
             float y = (float) random.nextGaussian() * 1000;
             float z = (float) random.nextGaussian() * 1000;
 
-            float num = Math.abs((float) random.nextGaussian() * 10);
+            float num = Math.abs((float) random.nextGaussian() * 6);
             createSwarm(x, y, z, 1000, num);
         }
     }
@@ -139,7 +141,7 @@ public class World {
             float ty = y + (float) random.nextGaussian() * spread;
             float tz = z + (float) random.nextGaussian() * spread;
             float size = Math.abs((float) random.nextGaussian() * 10) + 50;
-            createWorm(tx, ty, tz, size, "greenball", random.nextInt(10)+5).
+            createWorm(tx, ty, tz, size, "greenball", random.nextInt(15)+10).
                     addAspect(new TargetMover(queen.getPos(), 1));
         }
 
@@ -147,6 +149,11 @@ public class World {
     }
 
     private Entity createWorm(float x, float y, float z, float size, String sprite, int len) {
+        Color color = new Color(mix(random.nextFloat(), 0.5f, 1),
+                                mix(random.nextFloat(), 0.5f, 1),
+                                mix(random.nextFloat(), 0.5f, 1),
+                                1);
+
         final Entity head = addEntity(new Entity(x, y, z, size, sprite))
                 .addAspect(
                         new RandomMover(
@@ -156,12 +163,19 @@ public class World {
                         new TargetMover(x, y, z, 0.5f)
                 );
 
+        head.setLuminosity(WORM_LUMINOSITY);
+        head.setColor(color);
+
         Entity prev = head;
         float s = size * 0.8f;
         for (int i = 0; i < len; i++) {
 
             Entity tail = addEntity(new Entity(x, y, z, s, sprite))
                     .addAspect(new AttachMover(prev, size / 10));
+
+            tail.setLuminosity(WORM_LUMINOSITY);
+            tail.setColor(color);
+
             prev = tail;
             s *= 0.9;
         }

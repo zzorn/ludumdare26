@@ -1,11 +1,13 @@
 package net.zzorn.ld26.core;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
+import net.zzorn.ld26.core.utils.MathUtils;
 
 import static net.zzorn.ld26.core.utils.MathUtils.*;
 
@@ -27,6 +29,10 @@ public class Entity {
     private Vector3 vel = new Vector3();
     private Vector3 acc = new Vector3();
     private Vector3 screenPos = new Vector3();
+    private float screenDistance = 0;
+
+    private Color color = new Color(1, 1, 1, 1);
+    private float luminosity = 1;
 
     private float maxVel = 200;
     private float maxThrust = 10000;
@@ -95,6 +101,14 @@ public class Entity {
     }
 
     public void render(SpriteBatch spriteBatch, TextureAtlas atlas) {
+        float f = map(screenDistance, 0, 5000, 1, 0);
+        f = f * f;
+        f = clamp0to1(f);
+        spriteBatch.setColor(clamp0to1(color.r * f * luminosity),
+                             clamp0to1(color.g * f * luminosity),
+                             clamp0to1(color.b * f * luminosity),
+                             1);
+
         spriteBatch.draw(textureRegion, screenPos.x - screenSize / 2, screenPos.y - screenSize / 2, screenSize, screenSize);
 
         // Render aspects
@@ -112,6 +126,7 @@ public class Entity {
         camera.project(temp2);
 
         screenSize = temp2.dst(screenPos) / SQRT_2;
+        screenDistance = pos.dst(camera.position);
     }
 
 
@@ -137,5 +152,25 @@ public class Entity {
 
     public Vector3 getScreenPos() {
         return screenPos;
+    }
+
+    public float getScreenDistance() {
+        return screenDistance;
+    }
+
+    public Color getColor() {
+        return color;
+    }
+
+    public void setColor(Color color) {
+        this.color = color;
+    }
+
+    public float getLuminosity() {
+        return luminosity;
+    }
+
+    public void setLuminosity(float luminosity) {
+        this.luminosity = luminosity;
     }
 }

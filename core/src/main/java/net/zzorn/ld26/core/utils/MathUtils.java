@@ -18,7 +18,7 @@ public final class MathUtils {
     }
 
     public static float mixClamp(float t, float a, float b) {
-        return clamp(mix(t, a, b), a, b);
+        return clampAB(mix(t, a, b), a, b);
     }
 
     public static float map(float t, float srcStart, float srcEnd, float targetStart, float targetEnd) {
@@ -27,7 +27,7 @@ public final class MathUtils {
     }
 
     public static float mapClamp(float t, float srcStart, float srcEnd, float targetStart, float targetEnd) {
-        return clamp(map(t, srcStart, srcEnd, targetStart, targetEnd), targetStart, targetEnd);
+        return clampAB(map(t, srcStart, srcEnd, targetStart, targetEnd), targetStart, targetEnd);
     }
 
     public static float clamp0to1(float v) {
@@ -43,6 +43,15 @@ public final class MathUtils {
     }
 
     public static float clamp(float v, float min, float max) {
+        if (v < min) return min;
+        else if (v > max) return max;
+        else return v;
+    }
+
+    public static float clampAB(float v, float a, float b) {
+        float min = Math.min(a, b);
+        float max = Math.max(a, b);
+
         if (v < min) return min;
         else if (v > max) return max;
         else return v;
