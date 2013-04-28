@@ -11,6 +11,7 @@ import net.zzorn.ld26.core.movers.RandomMover;
 import net.zzorn.ld26.core.movers.TargetMover;
 
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.Random;
 
 import static net.zzorn.ld26.core.utils.MathUtils.*;
@@ -23,7 +24,14 @@ public class World {
     private static final float WORM_LUMINOSITY = 2f;
     private final TextureAtlas textureAtlas;
 
+    private Array<Entity> entitiesToAdd = new Array<Entity>(100);
     private Array<Entity> entities = new Array<Entity>(1000);
+
+    private Array<Entity> playerBullets = new Array<Entity>(100);
+    private Array<Entity> enemyBullets = new Array<Entity>(100);
+    private Array<Entity> enemies = new Array<Entity>(100);
+    private Array<Entity> friendlies = new Array<Entity>(100);
+
     private Random random;
     private final Vector3 temp = new Vector3();
     private final Vector3 temp2 = new Vector3();
@@ -33,8 +41,9 @@ public class World {
     }
 
     public Entity addEntity(Entity entity) {
-        entities.add(entity);
+        entitiesToAdd.add(entity);
         entity.setWorld(this);
+
         return entity;
     }
 
@@ -51,8 +60,39 @@ public class World {
     }
 
     public void update(float deltaTime) {
-        for (Entity entity : entities) {
+
+        // Add entities
+        for (Entity entity : entitiesToAdd) {
+            doAddEntity(entity);
+        }
+        entitiesToAdd.clear();
+
+        // Test collisions
+        checkGroupCollisions(enemyBullets, friendlies);
+        checkGroupCollisions(playerBullets, enemies);
+
+        // Update
+        for (Iterator<Entity> iterator = entities.iterator(); iterator.hasNext(); ) {
+            Entity entity = iterator.next();
             entity.update(deltaTime);
+
+            // Remove entity if it got destroyed
+            if (entity.isDestroyed()) {
+                iterator.remove();
+                enemyBullets.removeValue(entity, true);
+                enemies.removeValue(entity, true);
+                friendlies.removeValue(entity, true);
+                playerBullets.removeValue(entity, true);
+            }
+        }
+    }
+
+    private void checkGroupCollisions(final Array<Entity> as, final Array<Entity> bs) {
+        // Brute force ftw!
+        for (Entity a : as) {
+            for (Entity b : bs) {
+                a.checkCollision(b);
+            }
         }
     }
 
@@ -165,6 +205,7 @@ public class World {
 
         head.setLuminosity(WORM_LUMINOSITY);
         head.setColor(color);
+        head.setCollisionGroup(CollisionGroup.ENEMIES);
 
         Entity prev = head;
         float s = size * 0.8f;
@@ -183,5 +224,26 @@ public class World {
         head.setMaxThrust(100000);
 
         return head;
+    }
+
+    private void doAddEntity(Entity entity) {
+        entities.add(entity);
+
+        if (entity.getCollisionGroup() != null) {
+            switch (entity.getCollisionGroup()) {
+                case FRIENDLIES:
+                    friendlies.add(entity);
+                    break;
+                case FRIENDLY_BULLETS:
+                    playerBullets.add(entity);
+                    break;
+                case ENEMIES:
+                    enemies.add(entity);
+                    break;
+                case ENEMY_BULLETS:
+                    enemyBullets.add(entity);
+                    break;
+            }
+        }
     }
 }

@@ -7,7 +7,6 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.Array;
-import net.zzorn.ld26.core.utils.MathUtils;
 
 import static net.zzorn.ld26.core.utils.MathUtils.*;
 
@@ -17,6 +16,10 @@ import static net.zzorn.ld26.core.utils.MathUtils.*;
 public class Entity {
 
     private Array<Aspect> aspects = new Array<Aspect>();
+
+    private Weapon weapon;
+
+    private CollisionGroup collisionGroup = null;
 
     private static final Vector3 temp1 = new Vector3();
     private static final Vector3 temp2 = new Vector3();
@@ -28,6 +31,7 @@ public class Entity {
     private Vector3 pos = new Vector3();
     private Vector3 vel = new Vector3();
     private Vector3 acc = new Vector3();
+    private Vector3 direction = new Vector3(0, 0, 1);
     private Vector3 screenPos = new Vector3();
     private float screenDistance = 0;
 
@@ -39,7 +43,13 @@ public class Entity {
     private float size = 100;
     private float mass = 100;
 
+    private boolean destroyed = false;
+
     private float screenSize;
+    private float health = 100;
+    private float damage = 10;
+    private float lifeTimeLeft = 0;
+    private boolean expiresAfterTime = false;
 
     private TextureRegion textureRegion;
 
@@ -70,6 +80,8 @@ public class Entity {
 
     public void update(float deltaTime) {
 
+        if (weapon != null) weapon.update(deltaTime);
+
         // Update aspects
         for (Aspect aspect : aspects) {
             aspect.update(this, deltaTime);
@@ -98,24 +110,33 @@ public class Entity {
 
         // Zero acceleration (it is set again from user input or AI movement)
         acc.set(0,0,0);
+
+        // Check for death
+        if (expiresAfterTime) {
+            lifeTimeLeft -= deltaTime;
+            if (lifeTimeLeft < 0) {
+                setDestroyed(true);
+            }
+        }
     }
 
     public void render(SpriteBatch spriteBatch, TextureAtlas atlas) {
-        float f = map(screenDistance, 0, 5000, 1, 0);
-        f = f * f;
-        f = clamp0to1(f);
-        spriteBatch.setColor(clamp0to1(color.r * f * luminosity),
-                             clamp0to1(color.g * f * luminosity),
-                             clamp0to1(color.b * f * luminosity),
-                             1);
+        if (screenDistance > 1) {
+            float f = map(screenDistance, 0, 5000, 1, 0);
+            f = f * f;
+            f = clamp0to1(f);
+            spriteBatch.setColor(clamp0to1(color.r * f * luminosity),
+                                 clamp0to1(color.g * f * luminosity),
+                                 clamp0to1(color.b * f * luminosity),
+                                 1);
 
-        spriteBatch.draw(textureRegion, screenPos.x - screenSize / 2, screenPos.y - screenSize / 2, screenSize, screenSize);
+            spriteBatch.draw(textureRegion, screenPos.x - screenSize / 2, screenPos.y - screenSize / 2, screenSize, screenSize);
 
-        // Render aspects
-        for (Aspect aspect : aspects) {
-            aspect.render(this, screenPos, screenSize, spriteBatch, atlas);
+            // Render aspects
+            for (Aspect aspect : aspects) {
+                aspect.render(this, screenPos, screenSize, spriteBatch, atlas);
+            }
         }
-
     }
 
     public void project(PerspectiveCamera camera) {
@@ -172,5 +193,90 @@ public class Entity {
 
     public void setLuminosity(float luminosity) {
         this.luminosity = luminosity;
+    }
+
+    public final boolean overlaps(Entity other) {
+        float threshold = size*0.5f + other.size*0.5f;
+        return pos.dst2(other.getPos()) <= threshold * threshold;
+    }
+
+    public void setDestroyed(boolean destroyed) {
+        this.destroyed = destroyed;
+    }
+
+    public boolean isDestroyed() {
+        return destroyed;
+    }
+
+    public final void checkCollision(Entity other) {
+        if (overlaps(other)) {
+            onCollision(other);
+            other.onCollision(this);
+        }
+    }
+
+    /**
+     * Called when the entity collided with something else
+     */
+    protected void onCollision(Entity other) {
+        other.doDamage(damage);
+    }
+
+    public void doDamage(float amount) {
+        health -= damage;
+        if (health <= 0) {
+            setDestroyed(true);
+
+            // TODO: Spawn death animation
+        }
+    }
+
+    public float getHealth() {
+        return health;
+    }
+
+    public void setHealth(float health) {
+        this.health = health;
+    }
+
+    public float getDamage() {
+        return damage;
+    }
+
+    public void setDamage(float damage) {
+        this.damage = damage;
+    }
+
+    public void shoot() {
+        if (weapon != null) weapon.shoot(this);
+    }
+
+    public void setExpiration(float lifeTime) {
+        lifeTimeLeft = lifeTime;
+        expiresAfterTime = true;
+    }
+
+    public Weapon getWeapon() {
+        return weapon;
+    }
+
+    public CollisionGroup getCollisionGroup() {
+        return collisionGroup;
+    }
+
+    public void setCollisionGroup(CollisionGroup collisionGroup) {
+        this.collisionGroup = collisionGroup;
+    }
+
+    public void setWeapon(Weapon weapon) {
+        this.weapon = weapon;
+    }
+
+    public void setMass(float mass) {
+        this.mass = mass;
+    }
+
+    public Vector3 getDirection() {
+        return direction;
     }
 }

@@ -1,7 +1,6 @@
 package net.zzorn.ld26.core;
 
 import com.badlogic.gdx.*;
-import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
@@ -24,14 +23,15 @@ public class MainGame extends Game {
         camera = new PerspectiveCamera(67, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
         screenCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        screenCamera.position.set(Gdx.graphics.getWidth()/2, Gdx.graphics.getHeight()/2, 0);
+        screenCamera.position.set(Gdx.graphics.getWidth() / 2, Gdx.graphics.getHeight() / 2, 0);
 
         world = new World(atlas);
 
         world.setup(42);
-        player = new Player(100, 100, 100, 10, "greenball");
+        player = new Player(100, 100, 100, 10, "greenball", camera);
         world.addEntity(player);
-
+        player.setCollisionGroup(CollisionGroup.FRIENDLIES);
+        player.setWeapon(new Weapon(100, 10000, 10, 0.1f, 10, "yellowstar", false));
 
         // Setup input
         inputProcessor = createInputProcessor();
@@ -59,7 +59,7 @@ public class MainGame extends Game {
 
         // Setup projection
         screenCamera.update();
-        camera.update();
+        //camera.update();
         //spriteBatch.setProjectionMatrix(screenCamera.combined);
 
         // Render
